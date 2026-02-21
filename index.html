@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Recipe Cooking Dashboard</title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <div class="app" id="app">
@@ -31,7 +31,10 @@
           <input id="filterTime" type="number" placeholder="Max time (min)" min="1" />
         </div>
         <div class="header-right">
-          <button id="toggleTheme">Dark</button>
+          <button id="toggleTheme" aria-label="Toggle theme">Dark</button>
+          <button id="exportBtn" aria-label="Export recipes">Export</button>
+          <button id="importBtn" aria-label="Import recipes">Import</button>
+          <input id="importFile" type="file" accept="application/json" class="hidden" />
           <button id="openAdd">+ Add Recipe</button>
         </div>
       </header>
@@ -79,6 +82,8 @@
         </select>
         <textarea name="ingredients" placeholder="Ingredients (comma-separated)"></textarea>
         <textarea name="steps" placeholder="Steps (semicolon-separated)"></textarea>
+        <label class="file-label">Image (file upload or URL)</label>
+        <input name="imageFile" id="imageFile" type="file" accept="image/*" />
         <div class="form-actions">
           <button type="submit">Save</button>
           <button type="button" id="cancelBtn">Cancel</button>
@@ -87,6 +92,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

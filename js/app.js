@@ -1,12 +1,93 @@
-// Frontend functionality: fetches API, renders UI, handles create/edit/delete, filters, and theme
+// Frontend-only functionality using localStorage as data store
+const storageKey = 'recipes_v1';
+
+// Default sample data if none exists
+const defaultRecipes = [
+  { _id: 'r1', title: 'Spaghetti Aglio e Olio', image: '', time: 20, difficulty: 'Easy', ingredients: ['spaghetti','garlic','olive oil','chili flakes'], steps: ['Boil pasta','Saute garlic','Toss together'], favorite: false, createdAt: Date.now()-100000 },
+  { _id: 'r2', title: 'Tomato Soup', image: '', time: 35, difficulty: 'Medium', ingredients: ['tomato','onion','garlic','cream'], steps: ['Roast tomatoes','Blend','Simmer'], favorite: true, createdAt: Date.now()-50000 },
+  { _id: 'r3', title: 'Quick Pancakes', image: '', time: 15, difficulty: 'Easy', ingredients: ['flour','milk','egg','sugar'], steps: ['Mix','Cook on pan'], favorite: false, createdAt: Date.now()-20000 }
+];
+
+function loadFromStorage(){
+  try{
+    const raw = localStorage.getItem(storageKey);
+    if(!raw){ localStorage.setItem(storageKey, JSON.stringify(defaultRecipes)); return structuredClone(defaultRecipes); }
+    return JSON.parse(raw);
+  }catch(e){ console.error('read error', e); return [] }
+}
+
+function saveToStorage(list){
+  localStorage.setItem(storageKey, JSON.stringify(list));
+}
+
 const api = {
-  list: (q = '') => fetch('/api/recipes' + q).then(r => r.json()),
-  create: (data) => fetch('/api/recipes', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()),
-  update: (id,data) => fetch('/api/recipes/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()),
-  del: (id) => fetch('/api/recipes/'+id,{method:'DELETE'}).then(r=>r.json()),
-  toggleFav: (id) => fetch('/api/recipes/'+id+'/favorite',{method:'PUT'}).then(r=>r.json()),
-  analytics: () => fetch('/api/analytics').then(r=>r.json())
+  list: (q='') => new Promise(res => {
+    const items = loadFromStorage();
+    if(!q) return res(items.sort((a,b)=>b.createdAt - a.createdAt));
+    const params = new URLSearchParams(q.replace(/^\?/, ''));
+    let out = items.slice();
+    const qq = params.get('q');
+    if(qq){ const s = qq.toLowerCase(); out = out.filter(r=> r.title.toLowerCase().includes(s) || r.ingredients.join(' ').toLowerCase().includes(s)); }
+    if(params.get('difficulty')) out = out.filter(r=> r.difficulty === params.get('difficulty'));
+    if(params.get('maxTime')) out = out.filter(r=> r.time <= Number(params.get('maxTime')));
+    res(out.sort((a,b)=>b.createdAt - a.createdAt));
+  }),
+  create: (data) => new Promise(res => {
+    const items = loadFromStorage();
+    const id = 'r' + Date.now() + Math.floor(Math.random()*1000);
+    const doc = Object.assign({ _id: id, favorite: false, createdAt: Date.now() }, data);
+    items.push(doc); saveToStorage(items); res(doc);
+  }),
+  update: (id,data) => new Promise(res => {
+    const items = loadFromStorage(); const idx = items.findIndex(r=>r._id===id);
+    if(idx===-1) return res(null);
+    items[idx] = Object.assign(items[idx], data); saveToStorage(items); res(items[idx]);
+  }),
+  del: (id) => new Promise(res => {
+    let items = loadFromStorage(); items = items.filter(r=>r._id!==id); saveToStorage(items); res({ ok: true });
+  }),
+  toggleFav: (id) => new Promise(res => {
+    const items = loadFromStorage(); const it = items.find(r=>r._id===id); if(!it) return res(null); it.favorite = !it.favorite; saveToStorage(items); res(it);
+  }),
+  analytics: () => new Promise(res => {
+    const items = loadFromStorage();
+    const total = items.length;
+    const avgTime = total ? Math.round(items.reduce((s,r)=>s + (r.time||0),0) / total) : 0;
+    const quick = items.filter(r=> (r.time||0) <= 15).length;
+    res({ total, avgTime, quick });
+  })
 };
+
+// Export / Import helpers
+function exportData(){
+  const data = localStorage.getItem(storageKey) || '[]';
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'recipes-export.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function importDataFile(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      try{
+        const parsed = JSON.parse(r.result);
+        if(!Array.isArray(parsed)) return reject(new Error('Invalid format'));
+        saveToStorage(parsed);
+        resolve(parsed);
+      }catch(e){ reject(e); }
+    };
+    r.onerror = () => reject(new Error('File read error'));
+    r.readAsText(file);
+  });
+}
+
+function readFileAsDataURL(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = () => reject(new Error('file read')); r.readAsDataURL(file);
+  });
+}
 
 // Simple DOM helpers
 const $ = (s, el = document) => el.querySelector(s);
@@ -70,7 +151,6 @@ async function load(){
 function buildQuery(){
   const params = new URLSearchParams();
   const q = searchInput.value.trim(); if(q) params.set('q', q);
-  const ing = q; // search engine expects q or ingredient
   if(filterDifficulty.value) params.set('difficulty', filterDifficulty.value);
   if(filterTime.value) params.set('maxTime', filterTime.value);
   return params.toString() ? '?' + params.toString() : '';
@@ -105,6 +185,9 @@ recipeForm.addEventListener('submit', async (e)=>{
     ingredients: recipeForm.ingredients.value.split(',').map(s=>s.trim()).filter(Boolean),
     steps: recipeForm.steps.value.split(';').map(s=>s.trim()).filter(Boolean)
   };
+  // If user provided a file, prefer that (store as data URL)
+  const file = document.getElementById('imageFile').files[0];
+  if(file){ try{ data.image = await readFileAsDataURL(file); }catch(e){ console.warn('image load failed', e); }}
   if(editingId){ await api.update(editingId, data); } else { await api.create(data); }
   closeForm(); load();
 });
@@ -112,11 +195,19 @@ recipeForm.addEventListener('submit', async (e)=>{
 $('#cancelBtn').addEventListener('click', closeForm);
 
 // UI wiring
-document.querySelectorAll('.sidebar button').forEach(b => b.addEventListener('click', ()=>setView(b.dataset.view)));
+document.querySelectorAll('.sidebar button').forEach(b => b.addEventListener('click', (ev)=>{ location.hash = '#/' + b.dataset.view; }));
 $('#openAdd').addEventListener('click', ()=>openForm(null));
 searchInput.addEventListener('input', ()=>debounce(load, 250)());
 filterDifficulty.addEventListener('change', load);
 filterTime.addEventListener('change', load);
+
+// Export / Import wiring
+$('#exportBtn').addEventListener('click', exportData);
+$('#importBtn').addEventListener('click', ()=>$('#importFile').click());
+$('#importFile').addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; if(!f) return; try{ await importDataFile(f); load(); alert('Import successful'); }catch(err){ alert('Import failed: ' + err.message); }
+  e.target.value = '';
+});
 
 // Theme toggle (persist in localStorage)
 function setTheme(dark){
@@ -131,4 +222,12 @@ setTheme(localStorage.getItem('dark') === '1');
 function debounce(fn, ms){ let t; return () => { clearTimeout(t); t = setTimeout(fn, ms);} }
 
 // Initialize app
+// Hash routing: keep view in sync with URL
+function syncFromHash(){
+  const h = (location.hash || '#/dashboard').replace('#/','');
+  const view = (h === '' ? 'dashboard' : h.split('/')[0]);
+  setView(view);
+}
+window.addEventListener('hashchange', syncFromHash);
+syncFromHash();
 load();
