@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Recipe Cooking Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="brand">Recipe Dashboard</div>
+      <nav>
+        <button data-view="dashboard" class="active">Dashboard</button>
+        <button data-view="recipes">Recipes</button>
+        <button data-view="favorites">Favorites</button>
+      </nav>
+      <div class="sidebar-footer">Made with ❤️</div>
+    </aside>
+
+    <div class="main">
+      <header class="header">
+        <div class="header-left">
+          <input id="search" placeholder="Search recipes or ingredients" />
+          <select id="filterDifficulty">
+            <option value="">All difficulty</option>
+            <option>Easy</option>
+            <option>Medium</option>
+            <option>Hard</option>
+          </select>
+          <input id="filterTime" type="number" placeholder="Max time (min)" min="1" />
+        </div>
+        <div class="header-right">
+          <button id="toggleTheme">Dark</button>
+          <button id="openAdd">+ Add Recipe</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <section id="dashboardView" class="view">
+          <div class="stats" id="stats">
+            <!-- analytics populated dynamically -->
+          </div>
+          <div id="recent" class="card">
+            <h3>Recent Recipes</h3>
+            <div id="recipeList" class="list"></div>
+          </div>
+        </section>
+
+        <section id="recipesView" class="view hidden">
+          <div class="card actions">
+            <h3>All Recipes</h3>
+          </div>
+          <div id="allRecipes" class="list"></div>
+        </section>
+
+        <section id="favoritesView" class="view hidden">
+          <div class="card">
+            <h3>Favorites</h3>
+            <div id="favList" class="list"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal / Form -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="modalTitle">Add Recipe</h3>
+      <form id="recipeForm">
+        <input name="title" placeholder="Title" required />
+        <input name="image" placeholder="Image URL (optional)" />
+        <input name="time" type="number" placeholder="Time (min)" min="1" />
+        <select name="difficulty">
+          <option>Easy</option>
+          <option>Medium</option>
+          <option>Hard</option>
+        </select>
+        <textarea name="ingredients" placeholder="Ingredients (comma-separated)"></textarea>
+        <textarea name="steps" placeholder="Steps (semicolon-separated)"></textarea>
+        <div class="form-actions">
+          <button type="submit">Save</button>
+          <button type="button" id="cancelBtn">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

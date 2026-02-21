@@ -1,0 +1,35 @@
+:root{
+  --bg:#f6f7fb; --panel:#fff; --muted:#666; --accent:#ff6b6b; --text:#0b0b0b;
+}
+:root.dark{ --bg:#0f1720; --panel:#0b1220; --muted:#9aa4b2; --accent:#ff9f9f; --text:#eef2f7; }
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial;background:var(--bg);color:var(--text);}
+.app{display:flex;height:100vh}
+.sidebar{width:220px;background:var(--panel);padding:16px;display:flex;flex-direction:column}
+.brand{font-weight:700;margin-bottom:8px}
+.sidebar nav{display:flex;flex-direction:column;gap:6px}
+.sidebar button{background:transparent;border:0;padding:10px;text-align:left;border-radius:6px;cursor:pointer}
+.sidebar button.active{background:linear-gradient(90deg,var(--accent),#ffd6d6);color:#000}
+.sidebar-footer{margin-top:auto;font-size:12px;color:var(--muted)}
+.main{flex:1;display:flex;flex-direction:column}
+.header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:transparent}
+.header-left input, .header-left select{margin-right:8px;padding:8px;border-radius:6px;border:1px solid #ddd}
+.header-right button{margin-left:8px;padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
+.content{padding:18px;overflow:auto}
+.card{background:var(--panel);padding:12px;border-radius:8px;margin-bottom:12px}
+.stats{display:flex;gap:12px;margin-bottom:12px}
+.stat{padding:12px;background:linear-gradient(180deg,#fff,#fafafa);border-radius:8px;width:180px}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.item{background:var(--panel);padding:10px;border-radius:8px;display:flex;flex-direction:column}
+.item img{height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px}
+.item h4{margin:0 0 6px 0}
+.meta{font-size:13px;color:var(--muted);margin-bottom:8px}
+.actions{display:flex;gap:8px}
+.actions button{padding:6px 8px;border-radius:6px;border:0;cursor:pointer}
+.hidden{display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center}
+.modal-content{width:520px;background:var(--panel);padding:16px;border-radius:8px}
+form input, form textarea, form select{width:100%;padding:8px;margin:6px 0;border-radius:6px;border:1px solid #ddd}
+.form-actions{display:flex;gap:8px;justify-content:flex-end}
+
+@media (max-width:900px){.sidebar{width:60px}.brand{display:none}.header-left input{width:140px}}
